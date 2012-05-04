@@ -121,7 +121,6 @@ class AYAH
 		}
 		else
 		{
-			error_log('AYAH::recordConversion - AYAH Conversion Error: No Session Secret');
 			return false;
 		}
 	}
@@ -189,8 +188,6 @@ class AYAH
 		}
 		else
 		{
-			error_log("No cURL support.");
-	
 			// Build a header
 			$http_request  = "POST $path HTTP/1.1\r\n";
 			$http_request .= "Host: $hostname\r\n";
