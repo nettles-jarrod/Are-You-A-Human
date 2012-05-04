@@ -13,7 +13,7 @@ class AYAHTests extends \PHPUnit_Framework_TestCase
 	
 	protected function setUp()
 	{
-		$this->ayah = new AYAH('de1f494c7042b842179803483e8d3ab1a55d4bd9', '8f5720c7bc128a09a2dbf06b7cef50dfea0f8193');
+		$this->ayah = new AYAH('YOURPUBLISHERKEY', 'YOURSCORINGKEY');
 	}
 	
 	public function testGetPublisherHtml()
