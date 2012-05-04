@@ -10,16 +10,21 @@ class AYAH
 	protected $session_secret;
 	
 	/**
-	 * Constructor
-	 * If the session secret exists in input, it grabs it
-	 * @param $params associative array with keys publisher_key, scoring_key, web_service_host
-	 *
+	 * Constructs a new AYAH instance and grabs the session secret if it exists.
+	 * @param string $publisherKey
+	 * @param string $scoringKey
+	 * @param string $webServiceHost
+	 * @throws InvalidArgumentException
 	 */
 	public function __construct($publisherKey = '', $scoringKey = '', $webServiceHost = 'ws.areyouahuman.com')
 	{
 		if(array_key_exists('session_secret', $_REQUEST)) {
 			$this->session_secret = $_REQUEST['session_secret'];
 		}
+		
+		$this->ayah_publisher_key = $publisherKey;
+		$this->ayah_scoring_key = $scoringKey;
+		$this->ayah_web_service_host = $webServiceHost;
 	
 		// If the constants exist, override with those
 		if (defined('AYAH_PUBLISHER_KEY')) {
@@ -49,14 +54,13 @@ class AYAH
 	}
 	
 	/**
-	 * Returns the markup for the PlayThru
-	 *
+	 * Returns the markup for PlayThru.
+	 * 
 	 * @return string
 	 */
 	public function getPublisherHTML()
 	{
-		$url = 'https://' . $this->ayah_web_service_host . "/ws/script/" .
-				urlencode($this->ayah_publisher_key);
+		$url = 'https://' . $this->ayah_web_service_host . "/ws/script/" . urlencode($this->ayah_publisher_key);
 	
 		return "<div id='AYAH'></div><script src='". $url ."' type='text/javascript' language='JavaScript'></script>";
 	}
@@ -104,7 +108,7 @@ class AYAH
 		else
 		{
 			error_log('AYAH::recordConversion - AYAH Conversion Error: No Session Secret');
-			return FALSE;
+			return false;
 		}
 	}
 	
