@@ -8,6 +8,8 @@ I also added some basic unit testing for this project. There are still a few spo
 
 I'll post a code tutorial soon although it isn't difficult to use and I did document most of the methods fairly well.
 
+If there are problems please fork and submit pull requests, or email me at jarrod@squarecrow.com.
+
 
   [1]: http://www.areyouahuman.com/
   [2]: http://packagist.org/packages/Blackshawk/AYAH
