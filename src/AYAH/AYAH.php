@@ -6,61 +6,8 @@ class AYAH
 {
 	protected $ayah_publisher_key;
 	protected $ayah_scoring_key;
-	protected $ayah_web_service_host;
+	protected $ayah_web_service_host = 'ws.areyouahuman.com';
 	protected $session_secret;
-	
-	/**
-	 * Returns the markup for the PlayThru
-	 *
-	 * @return string
-	 */
-	public function getPublisherHTML() {
-		$url = 'https://' . $this->ayah_web_service_host . "/ws/script/" .
-				urlencode($this->ayah_publisher_key);
-	
-		return "<div id='AYAH'></div><script src='". $url ."' type='text/javascript' language='JavaScript'></script>";
-	}
-	
-	/**
-	 * Check whether the user is a human
-	 * Wrapper for the scoreGame API call
-	 *
-	 * @return boolean
-	 */
-	public function scoreResult() {
-		$result = false;
-		if ($this->session_secret) {
-			$fields = array(
-					'session_secret' => urlencode($this->session_secret),
-					'scoring_key' => $this->ayah_scoring_key
-			);
-			$resp = $this->doHttpsPostReturnJSONArray($this->ayah_web_service_host, "/ws/scoreGame", $fields);
-			if ($resp) {
-				$result = ($resp->status_code == 1);
-			}
-		}
-	
-		return $result;
-	}
-	
-	/**
-	 * Records a conversion
-	 * Called on the goal page that A and B redirect to
-	 * A/B Testing Specific Function
-	 *
-	 * @return boolean
-	 */
-	public function recordConversion(){
-		if( isset( $this->session_secret ) ){
-			return '<iframe style="border: none;" height="0" width="0" src="https://' .
-					$this->ayah_web_service_host . '/ws/recordConversion/'.
-					urlencode($this->session_secret) . '"></iframe>';
-		} else {
-			error_log('AYAH::recordConversion - AYAH Conversion Error: No Session Secret');
-			return FALSE;
-		}
-	}
-	
 	
 	/**
 	 * Constructor
@@ -68,15 +15,11 @@ class AYAH
 	 * @param $params associative array with keys publisher_key, scoring_key, web_service_host
 	 *
 	 */
-	public function __construct($params = array()) {
-		if(array_key_exists("session_secret", $_REQUEST)){
-			$this->session_secret = $_REQUEST["session_secret"];
+	public function __construct($publisherKey = '', $scoringKey = '', $webServiceHost = 'ws.areyouahuman.com')
+	{
+		if(array_key_exists('session_secret', $_REQUEST)) {
+			$this->session_secret = $_REQUEST['session_secret'];
 		}
-	
-		// Set them to defaults
-		$this->ayah_publisher_key = "";
-		$this->ayah_scoring_key = "";
-		$this->ayah_web_service_host = "ws.areyouahuman.com";
 	
 		// If the constants exist, override with those
 		if (defined('AYAH_PUBLISHER_KEY')) {
@@ -91,29 +34,78 @@ class AYAH
 			$this->ayah_web_service_host = AYAH_WEB_SERVICE_HOST;
 		}
 	
-		// Lastly grab the parameters input and save them
-		foreach (array_keys($params) as $key) {
-			if (in_array($key, array("publisher_key", "scoring_key", "web_service_host"))) {
-				$variable = "ayah_" . $key;
-				$this->$variable = $params[$key];
-			} else {
-				error_log("AYAH::__construct: Unrecognized key for constructor param: $key");
+		// Throw an exception if the appropriate information has not been provided.
+		if ($this->ayah_publisher_key == '') {
+			throw new InvalidArgumentException('AYAH publisher key is not defined.');
+		}
+	
+		if ($this->ayah_scoring_key == '') {
+			throw new InvalidArgumentException('AYAH scoring key is not defined.');
+		}
+	
+		if ($this->ayah_web_service_host == '') {
+			throw new InvalidArgumentException('AYAH web service host is not defined.');
+		}
+	}
+	
+	/**
+	 * Returns the markup for the PlayThru
+	 *
+	 * @return string
+	 */
+	public function getPublisherHTML()
+	{
+		$url = 'https://' . $this->ayah_web_service_host . "/ws/script/" .
+				urlencode($this->ayah_publisher_key);
+	
+		return "<div id='AYAH'></div><script src='". $url ."' type='text/javascript' language='JavaScript'></script>";
+	}
+	
+	/**
+	 * Check whether the user is a human
+	 * Wrapper for the scoreGame API call
+	 *
+	 * @return boolean
+	 */
+	public function scoreResult()
+	{
+		$result = false;
+		
+		if($this->session_secret)
+		{
+			$fields = array('session_secret' 	=> urlencode($this->session_secret),
+							'scoring_key' 		=> $this->ayah_scoring_key);
+			
+			$resp = $this->doHttpsPostReturnJSONArray($this->ayah_web_service_host, '/ws/scoreGame', $fields);
+			
+			if($resp) {
+				$result = ($resp->status_code == 1);
 			}
 		}
 	
-		// Generate some warnings if a foot shot is coming
-		if ($this->ayah_publisher_key == "") {
-			error_log("AYAH::__construct: Warning: Publisher key is not defined.  This won't work.");
-		}
+		return $result;
+	}
 	
-		if ($this->ayah_scoring_key == "") {
-			error_log("AYAH::__construct: Warning: Scoring key is not defined.  This won't work.");
+	/**
+	 * Records a conversion
+	 * Called on the goal page that A and B redirect to
+	 * A/B Testing Specific Function
+	 *
+	 * @return boolean
+	 */
+	public function recordConversion()
+	{
+		if(isset($this->session_secret))
+		{
+			return '<iframe style="border: none;" height="0" width="0" src="https://' .
+					$this->ayah_web_service_host . '/ws/recordConversion/'.
+					urlencode($this->session_secret) . '"></iframe>';
 		}
-	
-		if ($this->ayah_web_service_host == "") {
-			error_log("AYAH::__construct: Warning: Web service host is not defined.  This won't work.");
+		else
+		{
+			error_log('AYAH::recordConversion - AYAH Conversion Error: No Session Secret');
+			return FALSE;
 		}
-	
 	}
 	
 	/**
@@ -123,11 +115,12 @@ class AYAH
 	 * @param $fields associative array of fields
 	 * return JSON decoded data structure or empty data structure
 	 */
-	protected function doHttpsPostReturnJSONArray($hostname, $path, $fields) {
+	protected function doHttpsPostReturnJSONArray($hostname, $path, $fields)
+	{
 		$result = $this->doHttpsPost($hostname, $path, $fields);
 	
 		if ($result) {
-			$result = $this->doJSONArrayDecode($result);
+			$result = json_decode($result);
 		} else {
 			error_log("AYAH::doHttpsPostGetJSON: Post to https://$hostname$path returned no result.");
 			$result = array();
@@ -136,12 +129,21 @@ class AYAH
 		return $result;
 	}
 	
-	// Internal function; does an HTTPS post
-	protected function doHttpsPost($hostname, $path, $fields) {
+	/**
+	 * 
+	 * @param unknown_type $hostname
+	 * @param unknown_type $path
+	 * @param unknown_type $fields
+	 * @return Ambigous <string, mixed>
+	 */
+	protected function doHttpsPost($hostname, $path, $fields)
+	{
 		$result = "";
 		// URLencode the post string
 		$fields_string = "";
-		foreach($fields as $key=>$value) {
+		
+		foreach($fields as $key=>$value)
+		{
 			if (is_array($value)) {
 				foreach ($value as $v) {
 					$fields_string .= $key . '[]=' . $v . '&';
@@ -150,22 +152,27 @@ class AYAH
 				$fields_string .= $key.'='.$value.'&';
 			}
 		}
+		
 		rtrim($fields_string,'&');
 	
 		// cURL or something else
-		if (function_exists('curl_init')) {
+		if(function_exists('curl_init'))
+		{
 			$curlsession = curl_init();
-			curl_setopt($curlsession,CURLOPT_URL,"https://" . $hostname . $path);
-			curl_setopt($curlsession,CURLOPT_POST,count($fields));
-			curl_setopt($curlsession,CURLOPT_POSTFIELDS,$fields_string);
-			curl_setopt($curlsession,CURLOPT_RETURNTRANSFER,1);
-			curl_setopt($curlsession,CURLOPT_SSL_VERIFYHOST,0);
-			curl_setopt($curlsession,CURLOPT_SSL_VERIFYPEER,false);
+			curl_setopt($curlsession, CURLOPT_URL, 'https://' . $hostname . $path);
+			curl_setopt($curlsession, CURLOPT_POST,count($fields));
+			curl_setopt($curlsession, CURLOPT_POSTFIELDS,$fields_string);
+			curl_setopt($curlsession, CURLOPT_RETURNTRANSFER,1);
+			curl_setopt($curlsession, CURLOPT_SSL_VERIFYHOST,0);
+			curl_setopt($curlsession, CURLOPT_SSL_VERIFYPEER,false);
+			
 			$result = curl_exec($curlsession);
-		} else {
+		}
+		else
+		{
 			error_log("No cURL support.");
 	
-				// Build a header
+			// Build a header
 			$http_request  = "POST $path HTTP/1.1\r\n";
 			$http_request .= "Host: $hostname\r\n";
 			$http_request .= "Content-Type: application/x-www-form-urlencoded;\r\n";
@@ -189,32 +196,6 @@ class AYAH
 				$result = explode("\r\n\r\n", $result, 2);
 				$result = $result[1];
 			}
-		}
-	
-		return $result;
-	}
-	
-	// Internal function: does a JSON decode of the string
-	protected function doJSONArrayDecode($string) {
-		$result = array();
-	
-		if (function_exists("json_decode")) {
-			try {
-				$result = json_decode( $string);
-			} catch (Exception $e) {
-				error_log("AYAH::doJSONArrayDecode() - Exception when calling json_decode: " . $e->getMessage());
-				$result = null;
-			}
-		} elseif (file_Exists("json.php")) {
-			$json = new Services_JSON();
-			$result = $json->decode($string);
-	
-			if (!is_array($result)) {
-				error_log("AYAH::doJSONArrayDecode: Expected array; got something else: $result");
-				$result = array();
-			}
-		} else {
-			error_log("AYAH::doJSONArrayDecode: No JSON decode function available.");
 		}
 	
 		return $result;
