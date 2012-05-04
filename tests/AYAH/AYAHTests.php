@@ -33,5 +33,29 @@ class AYAHTests extends \PHPUnit_Framework_TestCase
 	{
 		$this->assertFalse($this->ayah->scoreResult());
 	}
+	
+	public function testRecordConversion()
+	{
+		$this->ayah->setSessionSecret('testingsecret');
+		$retval = $this->ayah->recordConversion();
+		
+		$this->assertEquals('<iframe style="border: none;" height="0" width="0" src="https://ws.areyouahuman.com/ws/recordConversion/testingsecret"></iframe>', $retval);
+		
+		$this->ayah->setSessionSecret(null);
+	}
+	
+	public function testScoreResult()
+	{
+		$this->ayah->setSessionSecret('testingsecret');
+		
+		$this->assertFalse($this->ayah->scoreResult());
+		
+		$this->ayah->setSessionSecret(null);
+	}
 }
+
+
+
+
+
 

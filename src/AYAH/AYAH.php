@@ -2,12 +2,33 @@
 
 namespace AYAH;
 
+
 class AYAH
 {
-	protected $ayah_publisher_key;
-	protected $ayah_scoring_key;
-	protected $ayah_web_service_host = 'ws.areyouahuman.com';
-	protected $session_secret;
+	/**
+	 * The developer publisher key.
+	 * @var string
+	 */
+	protected $publisherKey;
+	
+	/**
+	 * The developer scoring key.
+	 * @var string
+	 */
+	protected $scoringKey;
+	
+	/**
+	 * The webservice url to use in validating AYAH requests.
+	 * @var string
+	 */
+	protected $webService = 'ws.areyouahuman.com';
+	
+	/**
+	 * A session secret to be used in determining which AYAH request
+	 * the library is dealing with.
+	 * @var string
+	 */
+	protected $sessionSecret;
 	
 	/**
 	 * Constructs a new AYAH instance and grabs the session secret if it exists.
@@ -16,71 +37,65 @@ class AYAH
 	 * @param string $webServiceHost
 	 * @throws InvalidArgumentException
 	 */
-	public function __construct($publisherKey = '', $scoringKey = '', $webServiceHost = 'ws.areyouahuman.com')
+	public function __construct($publisherKey, $scoringKey, $webServiceHost = 'ws.areyouahuman.com')
 	{
-		if(array_key_exists('session_secret', $_REQUEST)) {
-			$this->session_secret = $_REQUEST['session_secret'];
-		}
-		
-		$this->ayah_publisher_key = $publisherKey;
-		$this->ayah_scoring_key = $scoringKey;
-		$this->ayah_web_service_host = $webServiceHost;
-	
-		// If the constants exist, override with those
-		if (defined('AYAH_PUBLISHER_KEY')) {
-			$this->ayah_publisher_key = AYAH_PUBLISHER_KEY;
-		}
-	
-		if (defined('AYAH_SCORING_KEY')) {
-			$this->ayah_scoring_key = AYAH_SCORING_KEY;
-		}
-	
-		if (defined('AYAH_WEB_SERVICE_HOST')) {
-			$this->ayah_web_service_host = AYAH_WEB_SERVICE_HOST;
+		if(array_key_exists('sessionSecret', $_REQUEST)) {
+			$this->sessionSecret = $_REQUEST['sessionSecret'];
 		}
 	
 		// Throw an exception if the appropriate information has not been provided.
-		if ($this->ayah_publisher_key == '') {
+		if (!is_string($publisherKey) || !strlen($publisherKey) > 1) {
 			throw new InvalidArgumentException('AYAH publisher key is not defined.');
 		}
 	
-		if ($this->ayah_scoring_key == '') {
+		if (!is_string($scoringKey) || !strlen($scoringKey) > 1) {
 			throw new InvalidArgumentException('AYAH scoring key is not defined.');
 		}
 	
-		if ($this->ayah_web_service_host == '') {
+		if (!is_string($webServiceHost) || !strlen($webServiceHost) > 1) {
 			throw new InvalidArgumentException('AYAH web service host is not defined.');
 		}
+		
+		$this->publisherKey = $publisherKey;
+		$this->scoringKey = $scoringKey;
+		$this->webService = $webServiceHost;
+	}
+	
+	/**
+	 * Sets the session secret.
+	 * @param string $secret
+	 * @return void
+	 */
+	public function setSessionSecret($secret)
+	{
+		$this->sessionSecret = $secret;
 	}
 	
 	/**
 	 * Returns the markup for PlayThru.
-	 * 
 	 * @return string
 	 */
 	public function getPublisherHTML()
 	{
-		$url = 'https://' . $this->ayah_web_service_host . "/ws/script/" . urlencode($this->ayah_publisher_key);
+		$url = 'https://' . $this->webService . "/ws/script/" . urlencode($this->publisherKey);
 	
 		return "<div id='AYAH'></div><script src='". $url ."' type='text/javascript' language='JavaScript'></script>";
 	}
 	
 	/**
-	 * Check whether the user is a human
-	 * Wrapper for the scoreGame API call
-	 *
+	 * Check whether the user is a human. Wrapper for the scoreGame API call
 	 * @return boolean
 	 */
 	public function scoreResult()
 	{
 		$result = false;
 		
-		if($this->session_secret)
+		if($this->sessionSecret)
 		{
-			$fields = array('session_secret' 	=> urlencode($this->session_secret),
-							'scoring_key' 		=> $this->ayah_scoring_key);
+			$fields = array('sessionSecret' 	=> urlencode($this->sessionSecret),
+							'scoring_key' 		=> $this->scoringKey);
 			
-			$resp = $this->doHttpsPostReturnJSONArray($this->ayah_web_service_host, '/ws/scoreGame', $fields);
+			$resp = $this->doHttpsPostReturnJSONArray($this->webService, '/ws/scoreGame', $fields);
 			
 			if($resp) {
 				$result = ($resp->status_code == 1);
@@ -94,16 +109,15 @@ class AYAH
 	 * Records a conversion
 	 * Called on the goal page that A and B redirect to
 	 * A/B Testing Specific Function
-	 *
 	 * @return boolean
 	 */
 	public function recordConversion()
 	{
-		if(isset($this->session_secret))
+		if(isset($this->sessionSecret))
 		{
 			return '<iframe style="border: none;" height="0" width="0" src="https://' .
-					$this->ayah_web_service_host . '/ws/recordConversion/'.
-					urlencode($this->session_secret) . '"></iframe>';
+					$this->webService . '/ws/recordConversion/'.
+					urlencode($this->sessionSecret) . '"></iframe>';
 		}
 		else
 		{
@@ -113,11 +127,11 @@ class AYAH
 	}
 	
 	/**
-	 * Do a HTTPS POST, return some JSON decoded as array (Internal function)
+	 * Do an HTTPS POST, return some JSON decoded as array.
 	 * @param $host hostname
 	 * @param $path path
 	 * @param $fields associative array of fields
-	 * return JSON decoded data structure or empty data structure
+	 * return array Decoded json structure or empty data structure
 	 */
 	protected function doHttpsPostReturnJSONArray($hostname, $path, $fields)
 	{
@@ -134,19 +148,20 @@ class AYAH
 	}
 	
 	/**
-	 * 
-	 * @param unknown_type $hostname
-	 * @param unknown_type $path
-	 * @param unknown_type $fields
+	 * Initiate a request to the AYAH web service through curl or using a socket
+	 * if the system does not have curl available.
+	 * @param string $hostname
+	 * @param string $path
+	 * @param array $fields
 	 * @return Ambigous <string, mixed>
 	 */
 	protected function doHttpsPost($hostname, $path, $fields)
 	{
-		$result = "";
-		// URLencode the post string
-		$fields_string = "";
+		$result = '';
+		$fields_string = '';
 		
-		foreach($fields as $key=>$value)
+		//Url encode the string
+		foreach($fields as $key => $value)
 		{
 			if (is_array($value)) {
 				foreach ($value as $v) {
