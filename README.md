@@ -1,3 +1,5 @@
+[![Build Status](https://secure.travis-ci.org/Blackshawk/Are-You-A-Human.png?branch=master)](http://travis-ci.org/Blackshawk/Are-You-A-Human)
+
 PHP 5.3 AYAH
 ------------
 For more information see the [Are You A Human][1] web site. The goal of the product is to provide a more interactive (and infinitely less frustrating) form of captcha for websites. Instead of hideously mangled text you play a small interactive game with very basic instructions.
