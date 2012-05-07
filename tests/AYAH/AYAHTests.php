@@ -20,7 +20,7 @@ class AYAHTests extends \PHPUnit_Framework_TestCase
 	{
 		$publisherHtml = $this->ayah->getPublisherHTML();
 		
-		$this->assertEquals("<div id='AYAH'></div><script src='https://ws.areyouahuman.com/ws/script/de1f494c7042b842179803483e8d3ab1a55d4bd9' type='text/javascript' language='JavaScript'></script>", 
+		$this->assertEquals("<div id='AYAH'></div><script src='https://ws.areyouahuman.com/ws/script/YOURPUBLISHERKEY' type='text/javascript' language='JavaScript'></script>", 
 							$publisherHtml);
 	}
 	
