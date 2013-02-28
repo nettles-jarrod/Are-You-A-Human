@@ -18,9 +18,18 @@ class AYAHTests extends \PHPUnit_Framework_TestCase
 	
 	public function testGetPublisherHtml()
 	{
-		$publisherHtml = $this->ayah->getPublisherHTML();
+    $ayah = $this->getAyahMock(array('doHttpsPostReturnJSONArray'));
+
+    $return = new \stdClass();
+    $return->session_secret = 'sessionSecret';
+
+    $ayah->expects($this->once())
+         ->method('doHttpsPostReturnJSONArray')
+         ->will($this->returnValue($return));
+
+		$publisherHtml = $ayah->getPublisherHTML();
 		
-		$this->assertEquals("<div id='AYAH'></div><script src='https://ws.areyouahuman.com/ws/script/YOURPUBLISHERKEY' type='text/javascript' language='JavaScript'></script>", 
+		$this->assertEquals("<div id='AYAH'></div><script src='https://ws.areyouahuman.com/ws/script/YOURPUBLISHERKEY/$return->session_secret' type='text/javascript' language='JavaScript'></script>", 
 							$publisherHtml);
 	}
 	
@@ -39,7 +48,7 @@ class AYAHTests extends \PHPUnit_Framework_TestCase
 		$this->ayah->setSessionSecret('testingsecret');
 		$retval = $this->ayah->recordConversion();
 		
-		$this->assertEquals('<iframe style="border: none;" height="0" width="0" src="https://ws.areyouahuman.com/ws/recordConversion/testingsecret"></iframe>', $retval);
+		$this->assertEquals('<iframe style="border: none;" height="0" width="0" src="https://ws.areyouahuman.com/ws/recordConversion/YOURPUBLISHERKEY"></iframe>', $retval);
 		
 		$this->ayah->setSessionSecret(null);
 	}
@@ -52,6 +61,14 @@ class AYAHTests extends \PHPUnit_Framework_TestCase
 		
 		$this->ayah->setSessionSecret(null);
 	}
+
+  protected function getAyahMock(array $mockMethods = null)
+  {
+    return $this->getMockBuilder('AYAH\AYAH')
+                ->setConstructorArgs(array('YOURPUBLISHERKEY', 'YOURSCORINGKEY'))
+                ->setMethods($mockMethods)
+                ->getMock();
+  }
 }
 
 
