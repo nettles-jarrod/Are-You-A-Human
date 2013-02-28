@@ -30,6 +30,8 @@ class AYAH
 	 */
 	protected $sessionSecret;
 	
+  protected $version = '1.1.7';
+
 	/**
 	 * Constructs a new AYAH instance and grabs the session secret if it exists.
 	 * @param string $publisherKey
@@ -239,7 +241,7 @@ class AYAH
 			$http_request .= "Host: $hostname\r\n";
 			$http_request .= "Content-Type: application/x-www-form-urlencoded;\r\n";
 			$http_request .= "Content-Length: " . strlen($fields_string) . "\r\n";
-			$http_request .= "User-Agent: AreYouAHuman/PHP 1.0.2\r\n";
+			$http_request .= "User-Agent: AreYouAHuman/PHP " . $this->version . "\r\n";
 			$http_request .= "Connection: Close\r\n";
 			$http_request .= "\r\n";
 			$http_request .= $fields_string ."\r\n";
